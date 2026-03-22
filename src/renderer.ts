@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { GRID_CONFIG } from './config';
 
 const { WIDTH, HEIGHT, TILE_SIZE } = GRID_CONFIG;
@@ -12,10 +16,13 @@ const WORLD_SPAN = Math.max(WIDTH, HEIGHT) * TILE_SIZE;
  * Stateless with respect to the simulation; just renders what's in the scene.
  */
 export class Renderer {
-    readonly renderer: THREE.WebGLRenderer;
-    readonly scene:    THREE.Scene;
-    readonly camera:   THREE.PerspectiveCamera;
-    readonly controls: OrbitControls;
+    readonly renderer:     THREE.WebGLRenderer;
+    readonly scene:        THREE.Scene;
+    readonly camera:       THREE.PerspectiveCamera;
+    readonly controls:     OrbitControls;
+    readonly hoverOutline: OutlinePass;
+    readonly selectOutline: OutlinePass;
+    private readonly composer: EffectComposer;
 
     constructor(canvas: HTMLCanvasElement) {
         // WebGL renderer
@@ -50,6 +57,29 @@ export class Renderer {
         // Lights
         this.setupLights();
 
+        // Post-processing
+        const size = new THREE.Vector2(canvas.clientWidth, canvas.clientHeight);
+        this.composer = new EffectComposer(this.renderer);
+        this.composer.addPass(new RenderPass(this.scene, this.camera));
+
+        this.hoverOutline = new OutlinePass(size, this.scene, this.camera);
+        this.hoverOutline.edgeStrength  = 4;
+        this.hoverOutline.edgeThickness = 1;
+        this.hoverOutline.edgeGlow      = 0;
+        this.hoverOutline.visibleEdgeColor.set('#66bbff');
+        this.hoverOutline.hiddenEdgeColor.set('#224466');
+        this.composer.addPass(this.hoverOutline);
+
+        this.selectOutline = new OutlinePass(size, this.scene, this.camera);
+        this.selectOutline.edgeStrength  = 5;
+        this.selectOutline.edgeThickness = 1.5;
+        this.selectOutline.edgeGlow      = 0.5;
+        this.selectOutline.visibleEdgeColor.set('#ffe566');
+        this.selectOutline.hiddenEdgeColor.set('#664400');
+        this.composer.addPass(this.selectOutline);
+
+        this.composer.addPass(new OutputPass());
+
         // Resize handling
         this.resizeToCanvas(canvas);
         window.addEventListener('resize', () => this.resizeToCanvas(canvas));
@@ -78,12 +108,13 @@ export class Renderer {
         const w = canvas.clientWidth;
         const h = canvas.clientHeight;
         this.renderer.setSize(w, h, false);
+        this.composer.setSize(w, h);
         this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
     }
 
     render(): void {
         this.controls.update();
-        this.renderer.render(this.scene, this.camera);
+        this.composer.render();
     }
 }

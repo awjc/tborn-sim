@@ -53,6 +53,12 @@ function loop(timestamp: number): void {
     world.update(rawDt, selectionManager.selectedIndex, selectionManager.hoveredIndex);
     controlPanel.update(rawDt);
     agentInfoPanel.update(selectionManager.selectedIndex, world.agents);
+
+    // Feed proxy meshes to outline passes (empty array hides the outline)
+    const { hoverProxy, selectProxy } = world.agentRenderer;
+    renderer.hoverOutline.selectedObjects  = hoverProxy.visible  ? [hoverProxy]  : [];
+    renderer.selectOutline.selectedObjects = selectProxy.visible ? [selectProxy] : [];
+
     renderer.render();
 
     requestAnimationFrame(loop);

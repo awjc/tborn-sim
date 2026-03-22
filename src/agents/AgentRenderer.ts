@@ -8,38 +8,27 @@ const { TILE_SIZE } = GRID_CONFIG;
 const HALF = AGENT_CONFIG.VISUAL_SIZE;
 const AGENT_GEO = new THREE.BoxGeometry(HALF * 2, HALF * 2, HALF * 2);
 
-/** Scale factor for the outline shell — large enough to peek past the front faces */
-const OUTLINE_SCALE = 1.18;
-
 const COLOR_HEALTHY  = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_HEALTHY));
 const COLOR_HUNGRY   = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_HUNGRY));
 const COLOR_THIRSTY  = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_THIRSTY));
 const COLOR_CRITICAL = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_CRITICAL));
-
-/** Create a back-face-only outline InstancedMesh (max 1 instance) */
-function makeOutlineMesh(scene: THREE.Scene, color: string): THREE.InstancedMesh {
-    const mat = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide });
-    const mesh = new THREE.InstancedMesh(AGENT_GEO, mat, 1);
-    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    mesh.count = 0;
-    scene.add(mesh);
-    return mesh;
-}
 
 /**
  * AgentRenderer — draws all agents as a single InstancedMesh.
  * One draw call regardless of agent count.
  * Color encodes the most urgent need.
  *
- * Hover/selection are shown as outline shells (back-face scaling trick):
- * a slightly larger back-face-only mesh rendered behind the real cube.
+ * Hover/selection outlines are handled by OutlinePass in the post-processing
+ * chain. Two invisible proxy Meshes track the hovered/selected agent positions;
+ * the caller passes them to the appropriate OutlinePass.selectedObjects.
  */
 export class AgentRenderer {
-    private readonly mesh:         THREE.InstancedMesh;
-    private readonly hoverOutline: THREE.InstancedMesh;
-    private readonly selectOutline: THREE.InstancedMesh;
+    private readonly mesh:        THREE.InstancedMesh;
     private readonly dummy        = new THREE.Object3D();
-    private readonly outlineDummy = new THREE.Object3D();
+
+    /** Invisible proxy meshes fed to OutlinePass for silhouette detection. */
+    readonly hoverProxy:  THREE.Mesh;
+    readonly selectProxy: THREE.Mesh;
 
     getMesh(): THREE.InstancedMesh { return this.mesh; }
 
@@ -51,9 +40,19 @@ export class AgentRenderer {
         this.mesh.count = 0;
         scene.add(this.mesh);
 
-        // Hover: blue outline; Select: white/gold outline
-        this.hoverOutline  = makeOutlineMesh(scene, '#66bbff');
-        this.selectOutline = makeOutlineMesh(scene, '#ffe566');
+        // Proxy meshes: written to neither color nor depth in the main pass,
+        // but OutlinePass overrides the material so it sees them for silhouettes.
+        const proxyMat = new THREE.MeshBasicMaterial({
+            colorWrite: false,
+            depthWrite: false,
+            depthTest:  false,
+        });
+        this.hoverProxy  = new THREE.Mesh(AGENT_GEO, proxyMat);
+        this.selectProxy = new THREE.Mesh(AGENT_GEO, proxyMat.clone());
+        this.hoverProxy.visible  = false;
+        this.selectProxy.visible = false;
+        scene.add(this.hoverProxy);
+        scene.add(this.selectProxy);
     }
 
     /** Called every frame to sync visual positions with agent data */
@@ -75,19 +74,18 @@ export class AgentRenderer {
         this.mesh.instanceMatrix.needsUpdate = true;
         if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
 
-        // Position outline shells (only active when index is valid)
-        this.updateOutline(this.hoverOutline,   hoveredIndex,  pool, world);
-        this.updateOutline(this.selectOutline,  selectedIndex, pool, world);
+        this.updateProxy(this.hoverProxy,  hoveredIndex,  pool, world);
+        this.updateProxy(this.selectProxy, selectedIndex, pool, world);
     }
 
-    private updateOutline(
-        outlineMesh: THREE.InstancedMesh,
+    private updateProxy(
+        proxy: THREE.Mesh,
         idx: number,
         pool: AgentPool,
         world: TileWorld,
     ): void {
         if (idx < 0 || idx >= pool.count) {
-            outlineMesh.count = 0;
+            proxy.visible = false;
             return;
         }
 
@@ -96,13 +94,8 @@ export class AgentRenderer {
         const sh = Math.max(0, world.getSolidHeight(Math.round(tx), Math.round(ty)));
         const wp = tileToWorld(tx, ty, sh);
 
-        this.outlineDummy.position.set(wp.x, wp.y + TILE_SIZE + HALF, wp.z);
-        this.outlineDummy.scale.setScalar(OUTLINE_SCALE);
-        this.outlineDummy.updateMatrix();
-
-        outlineMesh.count = 1;
-        outlineMesh.setMatrixAt(0, this.outlineDummy.matrix);
-        outlineMesh.instanceMatrix.needsUpdate = true;
+        proxy.position.set(wp.x, wp.y + TILE_SIZE + HALF, wp.z);
+        proxy.visible = true;
     }
 
     private agentColor(pool: AgentPool, id: number): THREE.Color {
@@ -119,7 +112,7 @@ export class AgentRenderer {
     dispose(): void {
         this.mesh.geometry.dispose();
         (this.mesh.material as THREE.Material).dispose();
-        (this.hoverOutline.material  as THREE.Material).dispose();
-        (this.selectOutline.material as THREE.Material).dispose();
+        (this.hoverProxy.material  as THREE.Material).dispose();
+        (this.selectProxy.material as THREE.Material).dispose();
     }
 }
