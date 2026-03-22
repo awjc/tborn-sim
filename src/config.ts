@@ -8,8 +8,8 @@
 // ============================================================================
 
 export const GRID_CONFIG = {
-    WIDTH: 128,          // Tile columns (X axis)
-    HEIGHT: 128,         // Tile rows    (Z axis in world space)
+    WIDTH: 64,          // Tile columns (X axis)
+    HEIGHT: 64,         // Tile rows    (Z axis in world space)
     LAYERS: 10,         // Vertical layers (Y axis)
     TILE_SIZE: 1.0,     // World units per tile edge
     CHUNK_SIZE: 16,     // Tiles per chunk side (must divide WIDTH/HEIGHT evenly)
