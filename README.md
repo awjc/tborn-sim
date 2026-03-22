@@ -6,7 +6,7 @@ A browser-based voxel ecosystem simulator with water physics and creature AI, in
 
 ## Features
 
-- **Voxel world** — 64×64×8 procedurally generated terrain using simplex noise
+- **Voxel world** — N×M×8 procedurally generated terrain using simplex noise
 - **Water physics** — cellular automaton simulation with pressure-based flow, sources, sinks, and evaporation
 - **Creature agents** — up to 200 agents with hunger/thirst needs, state-machine AI (wander → seek food/water → eat/drink), A* pathfinding, and death
 - **Rendering** — chunked Three.js mesh batching, orbit camera, agent health color coding, FPS counter

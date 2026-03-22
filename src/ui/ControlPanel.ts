@@ -1,5 +1,5 @@
 import { WorldSim } from '../world/WorldSim';
-import { UI_CONFIG, AGENT_CONFIG } from '../config';
+import { UI_CONFIG, AGENT_CONFIG, GRID_CONFIG } from '../config';
 
 /**
  * ControlPanel — minimal HTML overlay for simulation controls and stats.
@@ -106,8 +106,8 @@ export class ControlPanel {
                 const pool = this.world.agents;
                 const w    = this.world.world;
                 for (let tries = 0; tries < 100; tries++) {
-                    const x = Math.floor(Math.random() * 64);
-                    const y = Math.floor(Math.random() * 64);
+                    const x = Math.floor(Math.random() * GRID_CONFIG.WIDTH);
+                    const y = Math.floor(Math.random() * GRID_CONFIG.HEIGHT);
                     if (w.isPassable(x, y)) {
                         pool.spawn(x, y);
                         break;
