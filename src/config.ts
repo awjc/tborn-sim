@@ -20,7 +20,7 @@ export const GRID_CONFIG = {
 // ============================================================================
 
 export const TERRAIN_CONFIG = {
-    NOISE_SCALE: 0.05,          // Simplex noise frequency — smaller = smoother
+    NOISE_SCALE: 0.07,          // Simplex noise frequency — smaller = smoother
     ISLAND_FALLOFF: 1.4,        // Edge-falloff sharpness — higher = steeper shore
     BASE_HEIGHT: 1,             // Minimum solid layers at island centre
     MAX_HEIGHT: 8,              // Maximum solid layers (leaves 1 layer for water)
