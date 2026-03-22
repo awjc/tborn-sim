@@ -2,10 +2,14 @@ import './style.css';
 import { Renderer } from './renderer';
 import { WorldSim } from './world/WorldSim';
 import { ControlPanel } from './ui/ControlPanel';
+import { SelectionManager } from './selection/SelectionManager';
+import { AgentInfoPanel } from './ui/AgentInfoPanel';
 
 let renderer: Renderer;
 let world: WorldSim;
 let controlPanel: ControlPanel;
+let selectionManager: SelectionManager;
+let agentInfoPanel: AgentInfoPanel;
 
 let lastTime = performance.now();
 let frames = 0;
@@ -16,9 +20,15 @@ function init(): void {
     const canvas = document.getElementById('gl-canvas') as HTMLCanvasElement;
     fpsEl = document.getElementById('fps')!;
 
-    renderer     = new Renderer(canvas);
-    world        = new WorldSim(renderer.scene);
-    controlPanel = new ControlPanel(world);
+    renderer        = new Renderer(canvas);
+    world           = new WorldSim(renderer.scene);
+    controlPanel    = new ControlPanel(world);
+    agentInfoPanel  = new AgentInfoPanel();
+    selectionManager = new SelectionManager(
+        canvas,
+        renderer.camera,
+        world.agentRenderer.getMesh(),
+    );
 
     // Generate terrain and spawn initial agents
     world.reset();
@@ -39,8 +49,10 @@ function loop(timestamp: number): void {
         fpsAccum = 0;
     }
 
-    world.update(rawDt);
+    selectionManager.clampToPool(world.agents.count);
+    world.update(rawDt, selectionManager.selectedIndex, selectionManager.hoveredIndex);
     controlPanel.update(rawDt);
+    agentInfoPanel.update(selectionManager.selectedIndex, world.agents);
     renderer.render();
 
     requestAnimationFrame(loop);

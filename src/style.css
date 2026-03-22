@@ -105,6 +105,30 @@ body {
 }
 
 /* ============================================================
+   Agent info panel (bottom-left, shown when an agent is selected)
+   ============================================================ */
+#agent-info-panel {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    width: 220px;
+    background: rgba(10, 15, 20, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    backdrop-filter: blur(6px);
+    overflow: hidden;
+    z-index: 10;
+}
+
+.panel-hint {
+    padding: 6px 12px;
+    font-size: 11px;
+    color: #555;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ============================================================
    Buttons
    ============================================================ */
 .panel-buttons {

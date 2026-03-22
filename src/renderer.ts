@@ -42,7 +42,7 @@ export class Renderer {
         this.controls.minDistance    = WORLD_SPAN * 0.15;
         this.controls.maxDistance    = WORLD_SPAN * 2.5;
         this.controls.mouseButtons   = {
-            LEFT:   THREE.MOUSE.PAN,
+            LEFT:   null as unknown as THREE.MOUSE, // repurposed for agent selection
             MIDDLE: THREE.MOUSE.PAN,
             RIGHT:  THREE.MOUSE.ROTATE,
         };

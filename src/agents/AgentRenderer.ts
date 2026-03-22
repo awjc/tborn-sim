@@ -8,10 +8,12 @@ const { TILE_SIZE } = GRID_CONFIG;
 const HALF = AGENT_CONFIG.VISUAL_SIZE;
 const AGENT_GEO = new THREE.BoxGeometry(HALF * 2, HALF * 2, HALF * 2);
 
-const COLOR_HEALTHY  = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_HEALTHY));
-const COLOR_HUNGRY   = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_HUNGRY));
-const COLOR_THIRSTY  = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_THIRSTY));
-const COLOR_CRITICAL = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_CRITICAL));
+const COLOR_HEALTHY   = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_HEALTHY));
+const COLOR_HUNGRY    = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_HUNGRY));
+const COLOR_THIRSTY   = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_THIRSTY));
+const COLOR_CRITICAL  = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_CRITICAL));
+const COLOR_SELECTED  = new THREE.Color('#ffffff');
+const COLOR_HOVERED   = new THREE.Color('#aaddff');
 
 /**
  * AgentRenderer — draws all agents as a single InstancedMesh.
@@ -21,6 +23,8 @@ const COLOR_CRITICAL = new THREE.Color(parseColor(RENDER_CONFIG.COLOR_AGENT_CRIT
 export class AgentRenderer {
     private readonly mesh: THREE.InstancedMesh;
     private readonly dummy = new THREE.Object3D();
+
+    getMesh(): THREE.InstancedMesh { return this.mesh; }
 
     constructor(scene: THREE.Scene, maxAgents: number) {
         const mat = new THREE.MeshLambertMaterial();
@@ -32,7 +36,7 @@ export class AgentRenderer {
     }
 
     /** Called every frame to sync visual positions with agent data */
-    update(pool: AgentPool, world: TileWorld): void {
+    update(pool: AgentPool, world: TileWorld, selectedIndex = -1, hoveredIndex = -1): void {
         this.mesh.count = pool.count;
 
         for (let i = 0; i < pool.count; i++) {
@@ -50,8 +54,11 @@ export class AgentRenderer {
             this.dummy.updateMatrix();
             this.mesh.setMatrixAt(i, this.dummy.matrix);
 
-            // Colour based on most urgent need
-            const color = this.agentColor(pool, i);
+            // Colour: white if selected, light blue if hovered, otherwise need-based
+            let color: THREE.Color;
+            if (i === selectedIndex)     color = COLOR_SELECTED;
+            else if (i === hoveredIndex) color = COLOR_HOVERED;
+            else                         color = this.agentColor(pool, i);
             this.mesh.setColorAt(i, color);
         }
 

@@ -32,7 +32,7 @@ export class WorldSim {
     private readonly waterRenderer: WaterRenderer;
     readonly agents: AgentPool;
     private readonly agentBrain: AgentBrain;
-    private readonly agentRenderer: AgentRenderer;
+    readonly agentRenderer: AgentRenderer;
 
     isPaused = false;
     timeScale = 1.0;
@@ -99,7 +99,7 @@ export class WorldSim {
     }
 
     /** Called every animation frame */
-    update(rawDeltaTime: number): void {
+    update(rawDeltaTime: number, selectedAgentIndex = -1, hoveredAgentIndex = -1): void {
         if (this.isPaused) return;
 
         // Cap deltaTime to prevent large jumps (e.g. after tab switch)
@@ -132,7 +132,7 @@ export class WorldSim {
             this.waterRenderer.update(this.world);
         }
 
-        this.agentRenderer.update(this.agents, this.world);
+        this.agentRenderer.update(this.agents, this.world, selectedAgentIndex, hoveredAgentIndex);
     }
 
     getStats() {
