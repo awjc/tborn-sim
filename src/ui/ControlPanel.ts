@@ -18,8 +18,11 @@ export class ControlPanel {
     private deathEl!:    HTMLSpanElement;
     private timeEl!:     HTMLSpanElement;
 
-    constructor(world: WorldSim) {
+    private onReset?: () => void;
+
+    constructor(world: WorldSim, onReset?: () => void) {
         this.world = world;
+        this.onReset = onReset;
         this.statsInterval = 1 / UI_CONFIG.STATS_UPDATE_HZ;
         this.panel = this.buildPanel();
         document.body.appendChild(this.panel);
@@ -95,6 +98,7 @@ export class ControlPanel {
             document.getElementById('btn-reset')!.addEventListener('click', () => {
                 const count = parseInt(agentSlider.value, 10);
                 this.world.reset(count);
+                this.onReset?.();
             });
 
             document.getElementById('btn-spawn')!.addEventListener('click', () => {

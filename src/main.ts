@@ -22,7 +22,7 @@ function init(): void {
 
     renderer        = new Renderer(canvas);
     world           = new WorldSim(renderer.scene);
-    controlPanel    = new ControlPanel(world);
+    controlPanel    = new ControlPanel(world, () => { selectionManager.selectedIndex = -1; });
     agentInfoPanel  = new AgentInfoPanel();
     selectionManager = new SelectionManager(
         canvas,
