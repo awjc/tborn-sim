@@ -18,7 +18,7 @@ import { dirname, join } from 'path';
 const __dir    = dirname(fileURLToPath(import.meta.url));
 const DURATION = parseInt(process.argv[2] ?? '30000', 10);
 const PORT     = 5200 + Math.floor(Math.random() * 800);
-const DEV_URL  = `http://localhost:${PORT}`;
+const DEV_URL  = `http://localhost:${PORT}/tborn-sim/`;
 const OUT_DIR  = join(__dir, 'videos');
 const WIDTH    = 1280;
 const HEIGHT   = 800;
@@ -30,6 +30,7 @@ const CHROMIUM_ARGS = [
     '--enable-webgl',
     '--enable-webgl2',
     '--use-gl=swiftshader',
+    '--enable-unsafe-swiftshader',
     '--no-sandbox',
     '--disable-setuid-sandbox',
 ];

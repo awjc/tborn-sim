@@ -19,13 +19,14 @@ const __dir   = dirname(fileURLToPath(import.meta.url));
 const DELAY   = parseInt(process.argv[2] ?? '4000', 10);
 // Random ephemeral port to avoid clashing with any running dev server
 const PORT    = 5200 + Math.floor(Math.random() * 800);
-const DEV_URL = `http://localhost:${PORT}`;
+const DEV_URL = `http://localhost:${PORT}/tborn-sim/`;
 const OUT_DIR = join(__dir, 'screenshots');
 
 const CHROMIUM_ARGS = [
     '--enable-webgl',
     '--enable-webgl2',
     '--use-gl=swiftshader',
+    '--enable-unsafe-swiftshader',
     '--no-sandbox',
     '--disable-setuid-sandbox',
 ];
