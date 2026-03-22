@@ -46,7 +46,7 @@ export class AgentRenderer {
             const sh  = Math.max(0, world.getSolidHeight(itx, ity));
             const wp  = tileToWorld(tx, ty, sh);
 
-            this.dummy.position.set(wp.x, wp.y + HALF + TILE_SIZE * 0.05, wp.z);
+            this.dummy.position.set(wp.x, wp.y + TILE_SIZE + HALF, wp.z);
             this.dummy.updateMatrix();
             this.mesh.setMatrixAt(i, this.dummy.matrix);
 
