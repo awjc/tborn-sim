@@ -1,47 +1,22 @@
 import * as THREE from 'three';
 import { TileWorld } from '../world/TileWorld';
 import { GRID_CONFIG, RENDER_CONFIG } from '../config';
-import { colIndex, parseColor } from '../utils/TileUtils';
+import { colIndex, parseColor, tileToWorld } from '../utils/TileUtils';
 
 const { WIDTH, HEIGHT, TILE_SIZE } = GRID_CONFIG;
 
 /**
- * WaterRenderer — a single PlaneGeometry whose vertices are displaced
- * vertically to match the computed water levels each tick.
- *
- * One draw call for all water, regardless of grid size.
- * Phase 2 upgrade path: swap the MeshLambertMaterial for a custom
- * ShaderMaterial reading a DataTexture for animated ripples.
+ * WaterRenderer — one flat quad per wet tile via InstancedMesh.
+ * Each tile is independent so no triangle ever spans a wet/dry boundary,
+ * eliminating curtain artefacts and water bleeding through terrain sides.
  */
 export class WaterRenderer {
-    readonly mesh: THREE.Mesh;
-    private readonly positions: THREE.BufferAttribute;
-    private readonly totalWidth:  number;
-    private readonly totalHeight: number;
-
-    // PlaneGeometry is (WIDTH+1) × (HEIGHT+1) vertices
-    private readonly vertsX: number;
-    private readonly vertsY: number;
+    readonly mesh: THREE.InstancedMesh;
+    private readonly dummy = new THREE.Object3D();
 
     constructor(scene: THREE.Scene) {
-        this.totalWidth  = WIDTH  * TILE_SIZE;
-        this.totalHeight = HEIGHT * TILE_SIZE;
-        this.vertsX = WIDTH  + 1;
-        this.vertsY = HEIGHT + 1;
-
-        // PlaneGeometry lies in XZ; we rotate it to lie in XZ world plane
-        const geo = new THREE.PlaneGeometry(
-            this.totalWidth,
-            this.totalHeight,
-            WIDTH,
-            HEIGHT
-        );
-        // Rotate so it lies flat (PlaneGeometry is in XY by default)
+        const geo = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
         geo.rotateX(-Math.PI / 2);
-
-        // After rotation, positions are in XZ. We'll update Y per-vertex.
-        this.positions = geo.attributes.position as THREE.BufferAttribute;
-        this.positions.setUsage(THREE.DynamicDrawUsage);
 
         const mat = new THREE.MeshLambertMaterial({
             color: parseColor(RENDER_CONFIG.COLOR_WATER),
@@ -50,49 +25,35 @@ export class WaterRenderer {
             side: THREE.FrontSide,
         });
 
-        this.mesh = new THREE.Mesh(geo, mat);
-        this.mesh.renderOrder = 1; // render after terrain
+        this.mesh = new THREE.InstancedMesh(geo, mat, WIDTH * HEIGHT);
+        this.mesh.count = 0;
+        this.mesh.renderOrder = 1;
         scene.add(this.mesh);
     }
 
-    /**
-     * Update vertex heights from the world's waterLevel array.
-     * Called whenever WaterSim ticks (≤ 10 Hz).
-     */
     update(world: TileWorld): void {
         const wl = world.waterLevel;
         const sh = world.solidHeight;
-        const pos = this.positions;
+        let count = 0;
 
-        // PlaneGeometry vertices are ordered row-by-row (Y columns, then X rows)
-        // After rotateX the mapping is: vertex i → pos[i] = (x, y, z)
-        // Vertex layout: vertsX columns × vertsY rows, left-to-right, top-to-bottom
-        // We map each interior vertex to the closest tile column and set Y = solidHeight + waterLevel
-
-        for (let vy = 0; vy < this.vertsY; vy++) {
-            for (let vx = 0; vx < this.vertsX; vx++) {
-                const vi = vy * this.vertsX + vx;
-
-                // Clamp vertex to nearest interior tile (border vertices get nearest edge tile)
-                const tx = Math.min(Math.max(vx - 1, 0), WIDTH  - 1);
-                const ty = Math.min(Math.max(vy - 1, 0), HEIGHT - 1);
-
-                const ci  = colIndex(tx, ty);
-                const h   = Math.max(0, sh[ci]);      // solid height (layers)
+        for (let ty = 0; ty < HEIGHT; ty++) {
+            for (let tx = 0; tx < WIDTH; tx++) {
+                const ci = colIndex(tx, ty);
                 const water = wl[ci];
+                if (water <= 0.001) continue;
 
-                if (water > 0.001) {
-                    // Position water surface just above the solid ground
-                    pos.setY(vi, (h + water) * TILE_SIZE);
-                } else {
-                    // Hide dry vertices below terrain so they don't z-fight
-                    pos.setY(vi, -10);
-                }
+                const h = Math.max(0, sh[ci]);
+                const wp = tileToWorld(tx, ty, h);
+
+                // wp.y = h * TILE_SIZE (bottom of top block); terrain top face = (h+1) * TILE_SIZE
+                this.dummy.position.set(wp.x, wp.y + TILE_SIZE + water * TILE_SIZE, wp.z);
+                this.dummy.updateMatrix();
+                this.mesh.setMatrixAt(count++, this.dummy.matrix);
             }
         }
 
-        pos.needsUpdate = true;
-        this.mesh.geometry.computeVertexNormals();
+        this.mesh.count = count;
+        this.mesh.instanceMatrix.needsUpdate = true;
     }
 
     dispose(): void {
