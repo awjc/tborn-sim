@@ -10,8 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   sudo \
   unzip \
   jq \
-  vim \
-  xclip
+  vim
 
 # Set up the dev container user
 ARG USERNAME

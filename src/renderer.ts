@@ -34,7 +34,8 @@ export class Renderer {
 
         // Scene
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.FogExp2('#cce8ff', 0.004);
+        this.scene.background = new THREE.Color('#87CEEB');
+        this.scene.fog = new THREE.FogExp2('#87CEEB', 0.001);
 
         // Camera — top-down angled view centred on the world origin
         this.camera = new THREE.PerspectiveCamera(55, 1, 0.5, 1000);
