@@ -29,7 +29,7 @@ export class ControlPanel {
         const panel = document.createElement('div');
         panel.id = 'control-panel';
         panel.innerHTML = `
-            <div class="panel-header">Timberborn Sim</div>
+            <div class="panel-header">Tborn Sim</div>
 
             <div class="panel-section">
                 <div class="stat-row"><span class="label">Agents</span> <span id="stat-agents">—</span></div>
