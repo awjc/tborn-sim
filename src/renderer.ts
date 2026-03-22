@@ -34,7 +34,7 @@ export class Renderer {
         this.camera.position.set(0, WORLD_SPAN * 0.9, WORLD_SPAN * 0.6);
         this.camera.lookAt(0, 0, 0);
 
-        // Orbit controls — left drag pans, right drag orbits (Timberborn style)
+        // Orbit controls — left/middle drag pans, right drag orbits (Timberborn style)
         this.controls = new OrbitControls(this.camera, canvas);
         this.controls.enableDamping  = true;
         this.controls.dampingFactor  = 0.06;
@@ -43,7 +43,7 @@ export class Renderer {
         this.controls.maxDistance    = WORLD_SPAN * 2.5;
         this.controls.mouseButtons   = {
             LEFT:   THREE.MOUSE.PAN,
-            MIDDLE: THREE.MOUSE.DOLLY,
+            MIDDLE: THREE.MOUSE.PAN,
             RIGHT:  THREE.MOUSE.ROTATE,
         };
 
